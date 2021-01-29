@@ -1,0 +1,137 @@
+schema;kubernetes_block:
+  type: map
+  mapping:  
+    namespace:
+      type: str
+      required: True
+    name: 
+      type: str
+      required: True
+    key:
+      type: str
+      required: True
+    binary:
+      type: bool
+
+schema;kubernetes:
+  type: map
+  matching-rule: any
+  range:
+    min: 1
+    max: 1
+  mapping:  
+    regex;(^secret$):
+      include: kubernetes_block
+    regex;(^configmap$):
+      include: kubernetes_block
+      
+schema;config:
+  type: map
+  matching-rule: any
+  range:
+    min: 1
+    max: 1
+  mapping:
+    regex;(^value$):
+      type: str
+    regex;(^kubernetes$):
+      include: kubernetes
+
+schema;keystore_binary:
+  type: map
+  mapping:
+    keystore:
+      include: config
+      required: True
+    password:
+      include: config
+      required: True
+
+schema;keystore_certificate:
+  type: map
+  mapping:
+    client_private_key:
+      include: config
+      required: True
+    client_certificate:
+      include: config
+      required: True
+
+schema;keystore:
+  type: map
+  matching-rule: any
+  range:
+    min: 1
+    max: 1
+  mapping:
+    regex;(^binary$):
+      include: keystore_binary
+    regex;(^generate$):
+      include: keystore_certificate
+
+schema;truststore_binary:
+  type: map
+  mapping:
+    truststore:
+      include: config
+      required: True
+    password:
+      include: config
+      required: True
+
+schema;truststore_certificate:
+  type: map
+  mapping:
+    ca_certificate:
+      include: config
+      required: True
+
+schema;truststore:
+  type: map
+  matching-rule: any
+  range:
+    min: 1
+    max: 1
+  mapping:
+    regex;(^binary$):
+      include: truststore_binary
+    regex;(^generate$):
+      include: truststore_certificate
+
+name: Kafka run helper schema
+desc: This schema help validating configuration for the helper
+type: map
+mapping:
+  environment:
+    type: str
+    enum: ['uat', 'prd']
+    required: True
+  service:
+    type: str
+    required: True
+  kafka:
+    type: map
+    required: True
+    mapping:
+      bootstrap_servers:
+        include: config
+        required: True
+      keystore:
+        include: keystore
+        required: True
+      truststore:
+        include: truststore
+        required: True
+  schema_registry:
+    type: map
+    required: True
+    mapping:
+      user_name:
+        include: config
+        required: True
+      password:
+        include: config
+        required: True
+      url:
+        include: config
+        required: True

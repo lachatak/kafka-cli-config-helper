@@ -1,0 +1,9 @@
+security.protocol=SSL
+ssl.protocol=TLS
+ssl.keystore.location=/tmp/keyStore.p12
+ssl.keystore.type=PKCS12
+ssl.keystore.password={{ KEYSTORE_PASSWORD }}
+ssl.key.password={{ KEY_PASSWORD }}
+ssl.truststore.location=/tmp/trustStore.jks
+ssl.truststore.type=JKS
+ssl.truststore.password={{ TRUSTSTORE_PASSWORD }}

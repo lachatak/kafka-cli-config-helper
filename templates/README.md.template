@@ -1,0 +1,10 @@
+```bash
+docker run -v {{ OUTPUT_DIR }}:/tmp confluentinc/cp-schema-registry:latest kafka-avro-console-consumer \
+--bootstrap-server {{ KAFKA_BOOTSTRAP_SERVER}}  \
+--consumer.config /tmp/kafka.properties \
+--topic topic \
+--property schema.registry.url={{ SCHEMA_REGISTRY_URL }} \
+--property basic.auth.credentials.source=USER_INFO \
+--property schema.registry.basic.auth.user.info='{{ SCHEMA_REGISTRY_USERNAME }}:{{ SCHEMA_REGISTRY_PASSWORD }}' \
+--group test
+```
