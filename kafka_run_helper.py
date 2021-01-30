@@ -179,7 +179,7 @@ def truststore(truststore_config, target_path):
 
 
 def kafka(kafka_config, target_path):
-    add_to_template_values('KAFKA_BOOTSTRAP_SERVER', from_config(kafka_config['bootstrap_servers']))
+    add_to_template_values('KAFKA_BOOTSTRAP_SERVER', from_config(kafka_config['bootstrap_server']))
     keystore(kafka_config['keystore'], target_path)
     truststore(kafka_config['truststore'], target_path)
 

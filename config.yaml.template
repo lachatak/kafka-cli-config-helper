@@ -1,0 +1,47 @@
+environment: prd
+service: test-service
+kafka:
+  bootstrap_server:
+    value: localhost:9092
+  keystore:
+    generate:
+      client_private_key:
+        kubernetes:
+          secret:
+            namespace: test-service
+            name: kafka-certificates
+            key: client-private-key
+            binary: true
+      client_certificate:
+        kubernetes:
+          secret:
+            namespace: test-service
+            name: kafka-certificates
+            key: client-certificate
+            binary: true
+  truststore:
+    binary:
+      truststore:
+        kubernetes:
+          configmap:
+            namespace: test-service
+            name: kafka-truststore
+            key: truststore.jks
+            binary: true
+      password:
+        kubernetes:
+          secret:
+            namespace: test-service
+            name: kafka-certificates
+            key: truststore_password
+schema_registry:
+  user_name:
+    value: test-service
+  password:
+    kubernetes:
+      secret:
+        namespace: test-service
+        name: kafka-schema-registry
+        key: password
+  url:
+    value: localhost:8081

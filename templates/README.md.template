@@ -1,6 +1,6 @@
 ```bash
 docker run -v {{ OUTPUT_DIR }}:/tmp confluentinc/cp-schema-registry:latest kafka-avro-console-consumer \
---bootstrap-server {{ KAFKA_BOOTSTRAP_SERVER}}  \
+--bootstrap-server {{ KAFKA_BOOTSTRAP_SERVER }}  \
 --consumer.config /tmp/kafka.properties \
 --topic topic \
 --property schema.registry.url={{ SCHEMA_REGISTRY_URL }} \

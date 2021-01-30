@@ -113,7 +113,7 @@ mapping:
     type: map
     required: True
     mapping:
-      bootstrap_servers:
+      bootstrap_server:
         include: config
         required: True
       keystore:
