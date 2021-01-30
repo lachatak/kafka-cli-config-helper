@@ -11,8 +11,10 @@ from kubernetes import client, config
 from progress.bar import Bar
 from pykwalify.core import Core
 
-logging.basicConfig(level=logging.WARN)
+logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
+
+SchemaVersionSupport = '1.0.0'
 
 TemplateValues = {}
 files_to_parse = sys.argv[1:]
@@ -46,12 +48,13 @@ def task(func):
 
 def log_shell_out(proc):
     def wrapper(*args, **kwargs):
-        stdout, stderr = proc(*args, **kwargs).communicate()
+        child = proc(*args, **kwargs)
+        stdout, stderr = child.communicate()
         stdoutstr = stdout.decode("utf-8").rstrip()
         stderrstr = stderr.decode("utf-8").rstrip()
         if not stdoutstr == '':
             logger.info(stdoutstr)
-        if not stderrstr == '':
+        if not stderrstr == '' and not child.returncode == 0:
             logger.error(stderrstr)
 
     return wrapper
@@ -216,6 +219,15 @@ def schema_registry(schema_registry_config):
     add_to_template_values('SCHEMA_REGISTRY_USERNAME', from_config(schema_registry_config['user_name']))
     add_to_template_values('SCHEMA_REGISTRY_PASSWORD', from_config(schema_registry_config['password']))
     add_to_template_values('SCHEMA_REGISTRY_URL', from_config(schema_registry_config['url']))
+
+
+def schema_validation(schema_version, rule_obj, path_):
+    major, minor, bugfix = SchemaVersionSupport.split('.')
+    conf_major, conf_minor, conf_bugfix = schema_version.split('.')
+    if major == conf_major and minor >= conf_minor:
+        return True
+    else:
+        raise AssertionError(f'Current version is {SchemaVersionSupport}. {schema_version} is not supported!')
 
 
 if __name__ == '__main__':

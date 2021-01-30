@@ -98,10 +98,17 @@ schema;truststore:
     regex;(^generate$):
       include: truststore_certificate
 
+extensions:
+  - kafka_run_helper.py
 name: Kafka run helper schema
 desc: This schema help validating configuration for the helper
 type: map
 mapping:
+  version:
+    type: str
+    func: schema_validation
+    pattern: ^([0-9]+)\.([0-9]+)\.([0-9]+)$
+    required: True
   environment:
     type: str
     enum: ['uat', 'prd']
