@@ -1,14 +1,14 @@
 import base64
+import logging
+import subprocess
 import sys
+import uuid
 from os import path
 from pathlib import Path
 
-from kubernetes import client, config
-import subprocess
-from pykwalify.core import Core
-import logging
 from jinja2 import Template
-import uuid
+from kubernetes import client, config
+from pykwalify.core import Core
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -80,7 +80,7 @@ def from_kubernetes(kubernetes_config):
     elif 'configmap' in kubernetes_config:
         return from_k8s_configmap(kubernetes_config['configmap'])
     else:
-        raise NotImplemented
+        raise NotImplementedError
 
 
 def from_config(config_):
@@ -89,7 +89,7 @@ def from_config(config_):
     elif 'value' in config_:
         return config_['value']
     else:
-        raise NotImplemented
+        raise NotImplementedError
 
 
 def log_shell_out(proc):
@@ -144,7 +144,7 @@ def keystore(keystore_config, target_path):
     elif 'binary' in keystore_config:
         get_keystore(keystore_config['binary'], target_path)
     else:
-        raise NotImplemented
+        raise NotImplementedError
 
 
 def add_truststore_password_template_values(password):
@@ -175,7 +175,7 @@ def truststore(truststore_config, target_path):
     elif 'binary' in truststore_config:
         get_truststore(truststore_config['binary'], target_path)
     else:
-        raise NotImplemented
+        raise NotImplementedError
 
 
 def kafka(kafka_config, target_path):
