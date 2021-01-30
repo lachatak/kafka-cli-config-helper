@@ -11,14 +11,13 @@ from kubernetes import client, config
 from progress.bar import Bar
 from pykwalify.core import Core
 
-
 logging.basicConfig(level=logging.WARN)
 logger = logging.getLogger(__name__)
 
 TemplateValues = {}
 files_to_parse = sys.argv[1:]
-tasks = (len(files_to_parse) * 7) + 1
-bar = Bar('Processing', max=tasks)
+number_of_tasks = (len(files_to_parse) * 7) + 1
+bar = Bar('Processing', max=number_of_tasks)
 
 config.load_kube_config()
 v1 = client.CoreV1Api()
@@ -32,25 +31,49 @@ def main():
         target_path = make_target_directory(f"{app_config['service']}-{app_config['environment']}")
         kafka(app_config['kafka'], target_path)
         schema_registry(app_config['schema_registry'])
-        write_template(target_path)
+        write_templates(target_path)
     bar.finish()
 
 
+def task(func):
+    def wrapper(*args, **kwargs):
+        result = func(*args, **kwargs)
+        bar.next()
+        return result
+
+    return wrapper
+
+
+def log_shell_out(proc):
+    def wrapper(*args, **kwargs):
+        stdout, stderr = proc(*args, **kwargs).communicate()
+        stdoutstr = stdout.decode("utf-8").rstrip()
+        stderrstr = stderr.decode("utf-8").rstrip()
+        if not stdoutstr == '':
+            logger.info(stdoutstr)
+        if not stderrstr == '':
+            logger.error(stderrstr)
+
+    return wrapper
+
+
+@task
 def load_config(config_name):
     with open(config_name) as config_file:
         c = Core(data_file_obj=config_file, schema_files=["schema.yaml"])
         app_config = c.validate(raise_exception=True)
-        bar.next()
         return app_config
 
 
-def write_template(target_path):
-    for template_file in Path('./templates').iterdir():
-        target_file = path.basename(path.splitext(template_file)[0])
-        with open(template_file) as file_:
-            template = Template(file_.read())
+def write_templates(target_path):
+    @task
+    def write_template(template_file_, target_file):
+        with open(template_file_) as file:
+            template = Template(file.read())
             write_text(Path(path.join(target_path, target_file)), template.render(TemplateValues))
-        bar.next()
+
+    for template_file in Path('./templates').iterdir():
+        write_template(template_file, path.basename(path.splitext(template_file)[0]))
 
 
 def add_to_template_values(key, value):
@@ -63,22 +86,19 @@ def target_directory(target_path):
     return final_path
 
 
+@task
 def make_target_directory(target_path):
     target = target_directory(target_path)
     if not path.exists(target):
         target.mkdir(parents=True, exist_ok=True)
         logger.info("Target directory %s has been created", target)
-    bar.next()
     return target
 
 
 def from_k8s_secret(secret_config):
     secrets = v1.read_namespaced_secret(secret_config['name'], secret_config['namespace']).data
     secret = base64.b64decode(secrets[secret_config['key']])
-    if 'binary' in secret_config and secret_config["binary"]:
-        return secret
-    else:
-        return secret.decode("utf-8")
+    return secret.decode("utf-8")
 
 
 def from_k8s_configmap(configmap_config):
@@ -107,16 +127,6 @@ def from_config(config_):
         raise NotImplementedError
 
 
-def log_shell_out(proc):
-    stdout, stderr = proc.communicate()
-    stdoutstr = stdout.decode("utf-8").rstrip()
-    stderrstr = stderr.decode("utf-8").rstrip()
-    if not stdoutstr == '':
-        logger.info(stdoutstr)
-    if not stderrstr == '':
-        logger.info(stderrstr)
-
-
 def write_binary(file, binary):
     logger.info("Write target file %s", file)
     with open(file, "wb") as file:
@@ -134,18 +144,18 @@ def add_keystore_password_template_values(password):
     add_to_template_values('KEY_PASSWORD', password)
 
 
+@log_shell_out
 def generate_keystore(keystore_config, target_path):
     password = uuid.uuid4().hex
     add_keystore_password_template_values(password)
-    log_shell_out(subprocess.Popen(['./script/keystore.sh',
-                                    from_config(keystore_config['client_private_key']),
-                                    from_config(keystore_config['client_certificate']),
-                                    password,
-                                    target_path],
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE,
-                                   )
-                  )
+    return subprocess.Popen(['./script/keystore.sh',
+                             from_config(keystore_config['client_private_key']),
+                             from_config(keystore_config['client_certificate']),
+                             password,
+                             target_path],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            )
 
 
 def get_keystore(keystore_config, target_path):
@@ -153,6 +163,7 @@ def get_keystore(keystore_config, target_path):
     write_binary(Path(path.join(target_path, "keystore.p12")), from_config(keystore_config["keystore"]))
 
 
+@task
 def keystore(keystore_config, target_path):
     if 'generate' in keystore_config:
         generate_keystore(keystore_config['generate'], target_path)
@@ -160,24 +171,23 @@ def keystore(keystore_config, target_path):
         get_keystore(keystore_config['binary'], target_path)
     else:
         raise NotImplementedError
-    bar.next()
 
 
 def add_truststore_password_template_values(password):
     add_to_template_values('TRUSTSTORE_PASSWORD', password)
 
 
+@log_shell_out
 def generate_truststore(truststore_config, target_path):
     password = uuid.uuid4().hex
     add_truststore_password_template_values(password)
-    log_shell_out(subprocess.Popen(['./script/truststore.sh',
-                                    from_config(truststore_config['ca_certificate']),
-                                    password,
-                                    target_path],
-                                   stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE,
-                                   )
-                  )
+    return subprocess.Popen(['./script/truststore.sh',
+                             from_config(truststore_config['ca_certificate']),
+                             password,
+                             target_path],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            )
 
 
 def get_truststore(truststore_config, target_path):
@@ -185,6 +195,7 @@ def get_truststore(truststore_config, target_path):
     write_binary(Path(path.join(target_path, "truststore.jks")), from_config(truststore_config["truststore"]))
 
 
+@task
 def truststore(truststore_config, target_path):
     if 'generate' in truststore_config:
         generate_truststore(truststore_config['generate'], target_path)
@@ -192,7 +203,6 @@ def truststore(truststore_config, target_path):
         get_truststore(truststore_config['binary'], target_path)
     else:
         raise NotImplementedError
-    bar.next()
 
 
 def kafka(kafka_config, target_path):
@@ -201,11 +211,11 @@ def kafka(kafka_config, target_path):
     truststore(kafka_config['truststore'], target_path)
 
 
+@task
 def schema_registry(schema_registry_config):
     add_to_template_values('SCHEMA_REGISTRY_USERNAME', from_config(schema_registry_config['user_name']))
     add_to_template_values('SCHEMA_REGISTRY_PASSWORD', from_config(schema_registry_config['password']))
     add_to_template_values('SCHEMA_REGISTRY_URL', from_config(schema_registry_config['url']))
-    bar.next()
 
 
 if __name__ == '__main__':

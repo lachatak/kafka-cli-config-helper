@@ -11,14 +11,12 @@ kafka:
             namespace: test-service
             name: kafka-certificates
             key: client-private-key
-            binary: true
       client_certificate:
         kubernetes:
           secret:
             namespace: test-service
             name: kafka-certificates
             key: client-certificate
-            binary: true
   truststore:
     binary:
       truststore:
