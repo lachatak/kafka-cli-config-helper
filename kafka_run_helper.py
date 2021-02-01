@@ -9,7 +9,7 @@ from jinja2 import Template
 from progress.bar import Bar
 from pykwalify.core import Core
 
-from module.kubernetes import from_kubernetes, resolve_kubernetes
+from module.k8s.main import from_kubernetes, resolve_kubernetes
 
 
 logging.basicConfig(level=logging.WARNING)
@@ -64,7 +64,7 @@ def load_config(config_name):
     with open(config_name) as config_file:
         c = Core(data_file_obj=config_file, schema_files=[
             "schema.yaml",
-            "module/kubernetes.yaml"])
+            "module/k8s/schema.yaml"])
         app_config = c.validate(raise_exception=True)
         return app_config
 
