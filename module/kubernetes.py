@@ -3,7 +3,7 @@ import logging
 
 from jsonpath_ng.ext import parse
 from kubernetes import client, config
-from mergedeep import merge
+from mergedeep import merge, Strategy
 from unflatten import unflatten
 
 
@@ -20,7 +20,7 @@ def resolve_kubernetes(app_config):
 
     resolved = {}
     jsonpath_expr = parse('$..kubernetes.`parent`')
-    [merge(resolved, add_to_resolved(match)) for match in jsonpath_expr.find(app_config)]
+    [merge(resolved, add_to_resolved(match), strategy=Strategy.ADDITIVE) for match in jsonpath_expr.find(app_config)]
     return resolved
 
 
