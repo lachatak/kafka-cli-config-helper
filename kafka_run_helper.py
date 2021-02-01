@@ -1,4 +1,3 @@
-import base64
 import logging
 import subprocess
 import sys
@@ -7,9 +6,11 @@ from os import path
 from pathlib import Path
 
 from jinja2 import Template
-from kubernetes import client, config
 from progress.bar import Bar
 from pykwalify.core import Core
+
+from module.kubernetes import from_kubernetes, resolve_kubernetes
+
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
@@ -17,30 +18,28 @@ logger = logging.getLogger(__name__)
 SchemaVersionSupport = '1.0.0'
 
 TemplateValues = {}
+Resolved = {}
 files_to_parse = sys.argv[1:]
 number_of_tasks = (len(files_to_parse) * 7) + 1
-bar = Bar('Processing', max=number_of_tasks)
-
-config.load_kube_config()
-v1 = client.CoreV1Api()
-bar.next()
+bar = Bar('', max=number_of_tasks)
 
 
 def main():
     for config_name in files_to_parse:
         logger.info("Processing %s", config_name)
         app_config = load_config(config_name)
-        target_path = make_target_directory(f"{app_config['service']}-{app_config['environment']}")
-        kafka(app_config['kafka'], target_path)
-        schema_registry(app_config['schema_registry'])
-        write_templates(target_path)
+        print(resolve_kubernetes(app_config))
+        # target_path = make_target_directory(f"{app_config['service']}-{app_config['environment']}")
+        # kafka(app_config['kafka'], target_path)
+        # schema_registry(app_config['schema_registry'])
+        # write_templates(target_path)
     bar.finish()
 
 
 def task(func):
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
-        bar.next()
+        # bar.next()
         return result
 
     return wrapper
@@ -63,7 +62,9 @@ def log_shell_out(proc):
 @task
 def load_config(config_name):
     with open(config_name) as config_file:
-        c = Core(data_file_obj=config_file, schema_files=["schema.yaml"])
+        c = Core(data_file_obj=config_file, schema_files=[
+            "schema.yaml",
+            "module/kubernetes.yaml"])
         app_config = c.validate(raise_exception=True)
         return app_config
 
@@ -96,29 +97,6 @@ def make_target_directory(target_path):
         target.mkdir(parents=True, exist_ok=True)
         logger.info("Target directory %s has been created", target)
     return target
-
-
-def from_k8s_secret(secret_config):
-    secrets = v1.read_namespaced_secret(secret_config['name'], secret_config['namespace']).data
-    secret = base64.b64decode(secrets[secret_config['key']])
-    return secret.decode("utf-8")
-
-
-def from_k8s_configmap(configmap_config):
-    configs = v1.read_namespaced_config_map(configmap_config['name'], configmap_config['namespace'])
-    if 'binary' in configmap_config and configmap_config["binary"]:
-        return base64.b64decode(configs.binary_data[configmap_config['key']])
-    else:
-        return configs.data[configmap_config['key']]
-
-
-def from_kubernetes(kubernetes_config):
-    if 'secret' in kubernetes_config:
-        return from_k8s_secret(kubernetes_config['secret'])
-    elif 'configmap' in kubernetes_config:
-        return from_k8s_configmap(kubernetes_config['configmap'])
-    else:
-        raise NotImplementedError
 
 
 def from_config(config_):
