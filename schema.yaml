@@ -6,7 +6,7 @@ schema;config:
     max: 1
   mapping:
     regex;(^value$):
-      type: str
+      include: value
     regex;(^kubernetes$):
       include: kubernetes
 

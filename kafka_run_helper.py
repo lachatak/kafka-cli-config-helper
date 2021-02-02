@@ -9,6 +9,7 @@ from jinja2 import Template
 from progress.bar import Bar
 from pykwalify.core import Core
 from module.kubernetes import resolve_k8s_values
+from module.value import resolve_inline_values
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
@@ -32,7 +33,11 @@ def main():
 
 
 def resolve_module_values(app_config):
-    return resolve_k8s_values(app_config)
+    resolvers = [resolve_inline_values, resolve_k8s_values]
+    tmp = app_config
+    for resolver in resolvers:
+        tmp = resolver(tmp)
+    return tmp
 
 
 def generate_output(resolved):
@@ -70,6 +75,7 @@ def load_config(config_name):
     with open(config_name) as config_file:
         c = Core(data_file_obj=config_file, schema_files=[
             "schema.yaml",
+            "module/value.yaml",
             "module/kubernetes.yaml"])
         app_config = c.validate(raise_exception=True)
         return app_config
@@ -127,8 +133,8 @@ def generate_keystore(keystore_config, target_path):
     password = uuid.uuid4().hex
     add_keystore_password_template_values(password)
     return subprocess.Popen(['./script/keystore.sh',
-                             keystore_config['client_private_key']['value'],
-                             keystore_config['client_certificate']['value'],
+                             keystore_config['client_private_key'],
+                             keystore_config['client_certificate'],
                              password,
                              target_path],
                             stdout=subprocess.PIPE,
@@ -137,8 +143,8 @@ def generate_keystore(keystore_config, target_path):
 
 
 def get_keystore(keystore_config, target_path):
-    add_keystore_password_template_values(keystore_config['password']['value'])
-    write_binary(Path(path.join(target_path, "keystore.p12")), keystore_config["keystore"]['value'])
+    add_keystore_password_template_values(keystore_config['password'])
+    write_binary(Path(path.join(target_path, "keystore.p12")), keystore_config["keystore"])
 
 
 @task
@@ -160,7 +166,7 @@ def generate_truststore(truststore_config, target_path):
     password = uuid.uuid4().hex
     add_truststore_password_template_values(password)
     return subprocess.Popen(['./script/truststore.sh',
-                             truststore_config['ca_certificate']['value'],
+                             truststore_config['ca_certificate'],
                              password,
                              target_path],
                             stdout=subprocess.PIPE,
@@ -169,8 +175,8 @@ def generate_truststore(truststore_config, target_path):
 
 
 def get_truststore(truststore_config, target_path):
-    add_truststore_password_template_values(truststore_config['password']['value'])
-    write_binary(Path(path.join(target_path, "truststore.jks")), truststore_config["truststore"]['value'])
+    add_truststore_password_template_values(truststore_config['password'])
+    write_binary(Path(path.join(target_path, "truststore.jks")), truststore_config["truststore"])
 
 
 @task
@@ -184,16 +190,16 @@ def truststore(truststore_config, target_path):
 
 
 def kafka(kafka_config, target_path):
-    add_to_template_values('KAFKA_BOOTSTRAP_SERVER', kafka_config['bootstrap_server']['value'])
+    add_to_template_values('KAFKA_BOOTSTRAP_SERVER', kafka_config['bootstrap_server'])
     keystore(kafka_config['keystore'], target_path)
     truststore(kafka_config['truststore'], target_path)
 
 
 @task
 def schema_registry(schema_registry_config):
-    add_to_template_values('SCHEMA_REGISTRY_USERNAME', schema_registry_config['user_name']['value'])
-    add_to_template_values('SCHEMA_REGISTRY_PASSWORD', schema_registry_config['password']['value'])
-    add_to_template_values('SCHEMA_REGISTRY_URL', schema_registry_config['url']['value'])
+    add_to_template_values('SCHEMA_REGISTRY_USERNAME', schema_registry_config['user_name'])
+    add_to_template_values('SCHEMA_REGISTRY_PASSWORD', schema_registry_config['password'])
+    add_to_template_values('SCHEMA_REGISTRY_URL', schema_registry_config['url'])
 
 
 def schema_validation(schema_version, rule_obj, path_):

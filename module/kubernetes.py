@@ -17,7 +17,7 @@ v1 = client.CoreV1Api()
 
 def resolve_k8s_values(app_config):
     def add_to_resolved(match):
-        return unflatten({f'{match.full_path}.value': from_kubernetes(match.value['kubernetes'])})
+        return unflatten({f'{match.full_path}': from_kubernetes(match.value['kubernetes'])})
 
     resolved = {}
     jsonpath_expr = parse('$..kubernetes.`parent`')
