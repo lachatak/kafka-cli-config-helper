@@ -1,0 +1,26 @@
+schema;kubernetes_block:
+  type: map
+  mapping:  
+    namespace:
+      type: str
+      required: True
+    name: 
+      type: str
+      required: True
+    key:
+      type: str
+      required: True
+    binary:
+      type: bool
+
+schema;kubernetes:
+  type: map
+  matching-rule: any
+  range:
+    min: 1
+    max: 1
+  mapping:  
+    regex;(^secret$):
+      include: kubernetes_block
+    regex;(^configmap$):
+      include: kubernetes_block
