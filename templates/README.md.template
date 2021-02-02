@@ -1,3 +1,5 @@
+# Most popular kafka commands
+
 ## Viewing topic group details
 - replace the GROUP you are interested in
 - run
@@ -17,6 +19,21 @@ docker run -v {{ OUTPUT_DIR }}:/tmp confluentinc/cp-kafka:latest kafka-consumer-
 --command-config /tmp/kafka.properties \
 --group GROUP \
 --describe
+```
+
+## Reset offset for consumer group
+- replace the TOPIC and GROUP you want to reset offset
+- make sure that all you consumers are stopped
+- run
+```bash
+docker run -v {{ OUTPUT_DIR }}:/tmp confluentinc/cp-kafka:latest kafka-consumer-groups \
+--bootstrap-server {{ KAFKA_BOOTSTRAP_SERVER }}  \
+--command-config /tmp/kafka.properties \
+--topic TOPIC \
+--group GROUP \
+--reset-offsets \
+--to-offset 1500 \
+--execute
 ```
 
 ## Consume message from topic
