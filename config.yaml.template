@@ -7,11 +7,8 @@ kafka:
   keystore:
     generate:
       client_private_key:
-        kubernetes:
-          secret:
-            namespace: test-service
-            name: kafka-certificates
-            key: client-private-key
+        file:
+          path: /tmp/client_private_key
       client_certificate:
         kubernetes:
           secret:
@@ -28,11 +25,9 @@ kafka:
             key: truststore.jks
             binary: true
       password:
-        kubernetes:
-          secret:
-            namespace: test-service
-            name: kafka-certificates
-            key: truststore_password
+        google_secret_manager:
+          secret: projects/XXXXXXXXX/secrets/truststore_password/versions/1
+          base64: false
 schema_registry:
   user_name:
     value: test-service

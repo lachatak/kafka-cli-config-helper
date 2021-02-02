@@ -11,9 +11,11 @@ from unflatten import unflatten
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
+KEY = 'kubernetes'
+
 
 def resolve_k8s_values(app_config):
-    jsonpath_expr = parse('$..kubernetes.`parent`')
+    jsonpath_expr = parse(f'$..{KEY}.`parent`')
     results = jsonpath_expr.find(app_config)
     count = len(results)
     if count > 0:
@@ -21,9 +23,9 @@ def resolve_k8s_values(app_config):
         config.load_kube_config()
         v1_api = client.CoreV1Api()
         resolved = {}
-        [merge(resolved, unflatten({f'{match.full_path}': from_kubernetes(match.value['kubernetes'], v1_api)}), strategy=Strategy.ADDITIVE)
+        [merge(resolved, unflatten({f'{match.full_path}': from_kubernetes(match.value[KEY], v1_api)}), strategy=Strategy.ADDITIVE)
          for match in results]
-        return merge(nested_delete(app_config, 'kubernetes'), resolved, strategy=Strategy.ADDITIVE)
+        return merge(nested_delete(app_config, KEY), resolved, strategy=Strategy.ADDITIVE)
     else:
         return app_config
 

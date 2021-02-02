@@ -9,6 +9,10 @@ schema;config:
       include: value
     regex;(^kubernetes$):
       include: kubernetes
+    regex;(^google_secret_manager$):
+      include: google_secret_manager
+    regex;(^file$):
+      include: file
 
 schema;keystore_binary:
   type: map
