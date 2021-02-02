@@ -17,4 +17,9 @@ It will collect connection properties and credentials based on your configuratio
 
 ## Execute command
 Go into the generated directory and see README.md. In the command sections there are several popular kafka actions ready to be used. All you need to do is to copy the command into a terminal window and run. Underlying config file and credentials will be mounted into the docker container.
- 
+
+# Modules
+- value - provide value directly in the config 
+- kubernetes - can resolve value from secret and config map (plain text, binary)
+- file - can resolve value from file (plain text, binary)
+- google_secret_manager - can resolve value from Google Cloud Secret Manager (plain text or base64 encoded)
