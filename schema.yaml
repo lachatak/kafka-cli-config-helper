@@ -9,8 +9,8 @@ schema;config:
       include: value
     regex;(^kubernetes$):
       include: kubernetes
-    regex;(^google_secret_manager$):
-      include: google_secret_manager
+    regex;(^google_cloud_secret_manager$):
+      include: google_cloud_secret_manager
     regex;(^file$):
       include: file
 

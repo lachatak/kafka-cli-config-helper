@@ -9,10 +9,7 @@ from jinja2 import Template
 from progress.bar import Bar
 from pykwalify.core import Core
 
-from module.file import resolve_file_values
-from module.google_secret_manager import resolve_secret_manager_values
-from module.kubernetes import resolve_k8s_values
-from module.value import resolve_inline_values
+from module import File, GoogleCloudSecretManager, Kubernetes, Value
 
 
 logging.basicConfig(level=logging.WARNING)
@@ -31,17 +28,16 @@ def main():
     for config_name in files_to_parse:
         logger.info("Processing %s", config_name)
         app_config = load_config(config_name)
-        print(resolve_file_values({'test': {'file': {'path': 'cert.txt', 'binary': 'true'}}}))
-        # resolved = resolve_module_values(app_config)
-        # generate_output(resolved)
+        resolved = resolve_module_values(app_config)
+        generate_output(resolved)
     bar.finish()
 
 
 def resolve_module_values(app_config):
-    resolvers = [resolve_inline_values, resolve_k8s_values, resolve_secret_manager_values, resolve_file_values]
+    resolvers = [Value(), Kubernetes(), GoogleCloudSecretManager(), File()]
     tmp = app_config
     for resolver in resolvers:
-        tmp = resolver(tmp)
+        tmp = resolver.resolve(tmp)
     return tmp
 
 
@@ -80,10 +76,7 @@ def load_config(config_name):
     with open(config_name) as config_file:
         c = Core(data_file_obj=config_file, schema_files=[
             "schema.yaml",
-            "module/value.yaml",
-            "module/file.yaml",
-            "module/google_secret_manager.yaml",
-            "module/kubernetes.yaml"])
+            "module_schema.yaml"])
         app_config = c.validate(raise_exception=True)
         return app_config
 

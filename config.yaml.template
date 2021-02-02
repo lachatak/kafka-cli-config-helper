@@ -25,7 +25,7 @@ kafka:
             key: truststore.jks
             binary: true
       password:
-        google_secret_manager:
+        google_cloud_secret_manager:
           secret: projects/XXXXXXXXX/secrets/truststore_password/versions/1
           base64: false
 schema_registry:

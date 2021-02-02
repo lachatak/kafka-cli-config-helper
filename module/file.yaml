@@ -1,8 +1,0 @@
-schema;file:
-  type: map
-  mapping:
-    path:
-      type: str
-      required: True
-    binary:
-      type: bool
