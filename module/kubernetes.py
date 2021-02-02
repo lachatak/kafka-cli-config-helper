@@ -3,7 +3,8 @@ import logging
 
 from jsonpath_ng.ext import parse
 from kubernetes import client, config
-from mergedeep import merge, Strategy
+from mergedeep import Strategy, merge
+from nested_lookup import nested_delete
 from unflatten import unflatten
 
 
@@ -14,14 +15,14 @@ config.load_kube_config()
 v1 = client.CoreV1Api()
 
 
-def resolve_kubernetes(app_config):
+def resolve_k8s_values(app_config):
     def add_to_resolved(match):
-        return unflatten({f'{match.full_path}': from_kubernetes(match.value['kubernetes'])})
+        return unflatten({f'{match.full_path}.value': from_kubernetes(match.value['kubernetes'])})
 
     resolved = {}
     jsonpath_expr = parse('$..kubernetes.`parent`')
     [merge(resolved, add_to_resolved(match), strategy=Strategy.ADDITIVE) for match in jsonpath_expr.find(app_config)]
-    return resolved
+    return merge(nested_delete(app_config, 'kubernetes'), resolved, strategy=Strategy.ADDITIVE)
 
 
 def from_k8s_secret(secret_config):

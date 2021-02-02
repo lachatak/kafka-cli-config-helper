@@ -8,9 +8,7 @@ from pathlib import Path
 from jinja2 import Template
 from progress.bar import Bar
 from pykwalify.core import Core
-
-from module.k8s.main import from_kubernetes, resolve_kubernetes
-
+from module.kubernetes import resolve_k8s_values
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
@@ -20,7 +18,7 @@ SchemaVersionSupport = '1.0.0'
 TemplateValues = {}
 Resolved = {}
 files_to_parse = sys.argv[1:]
-number_of_tasks = (len(files_to_parse) * 7) + 1
+number_of_tasks = (len(files_to_parse) * 7)
 bar = Bar('', max=number_of_tasks)
 
 
@@ -28,18 +26,26 @@ def main():
     for config_name in files_to_parse:
         logger.info("Processing %s", config_name)
         app_config = load_config(config_name)
-        print(resolve_kubernetes(app_config))
-        # target_path = make_target_directory(f"{app_config['service']}-{app_config['environment']}")
-        # kafka(app_config['kafka'], target_path)
-        # schema_registry(app_config['schema_registry'])
-        # write_templates(target_path)
+        resolved = resolve_module_values(app_config)
+        generate_output(resolved)
     bar.finish()
+
+
+def resolve_module_values(app_config):
+    return resolve_k8s_values(app_config)
+
+
+def generate_output(resolved):
+    target_path = make_target_directory(f"{resolved['service']}-{resolved['environment']}")
+    kafka(resolved['kafka'], target_path)
+    schema_registry(resolved['schema_registry'])
+    write_templates(target_path)
 
 
 def task(func):
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
-        # bar.next()
+        bar.next()
         return result
 
     return wrapper
@@ -64,7 +70,7 @@ def load_config(config_name):
     with open(config_name) as config_file:
         c = Core(data_file_obj=config_file, schema_files=[
             "schema.yaml",
-            "module/k8s/schema.yaml"])
+            "module/kubernetes.yaml"])
         app_config = c.validate(raise_exception=True)
         return app_config
 
@@ -99,15 +105,6 @@ def make_target_directory(target_path):
     return target
 
 
-def from_config(config_):
-    if 'kubernetes' in config_:
-        return from_kubernetes(config_['kubernetes'])
-    elif 'value' in config_:
-        return config_['value']
-    else:
-        raise NotImplementedError
-
-
 def write_binary(file, binary):
     logger.info("Write target file %s", file)
     with open(file, "wb") as file:
@@ -130,8 +127,8 @@ def generate_keystore(keystore_config, target_path):
     password = uuid.uuid4().hex
     add_keystore_password_template_values(password)
     return subprocess.Popen(['./script/keystore.sh',
-                             from_config(keystore_config['client_private_key']),
-                             from_config(keystore_config['client_certificate']),
+                             keystore_config['client_private_key']['value'],
+                             keystore_config['client_certificate']['value'],
                              password,
                              target_path],
                             stdout=subprocess.PIPE,
@@ -140,8 +137,8 @@ def generate_keystore(keystore_config, target_path):
 
 
 def get_keystore(keystore_config, target_path):
-    add_keystore_password_template_values(from_config(keystore_config['password']))
-    write_binary(Path(path.join(target_path, "keystore.p12")), from_config(keystore_config["keystore"]))
+    add_keystore_password_template_values(keystore_config['password']['value'])
+    write_binary(Path(path.join(target_path, "keystore.p12")), keystore_config["keystore"]['value'])
 
 
 @task
@@ -163,7 +160,7 @@ def generate_truststore(truststore_config, target_path):
     password = uuid.uuid4().hex
     add_truststore_password_template_values(password)
     return subprocess.Popen(['./script/truststore.sh',
-                             from_config(truststore_config['ca_certificate']),
+                             truststore_config['ca_certificate']['value'],
                              password,
                              target_path],
                             stdout=subprocess.PIPE,
@@ -172,8 +169,8 @@ def generate_truststore(truststore_config, target_path):
 
 
 def get_truststore(truststore_config, target_path):
-    add_truststore_password_template_values(from_config(truststore_config['password']))
-    write_binary(Path(path.join(target_path, "truststore.jks")), from_config(truststore_config["truststore"]))
+    add_truststore_password_template_values(truststore_config['password']['value'])
+    write_binary(Path(path.join(target_path, "truststore.jks")), truststore_config["truststore"]['value'])
 
 
 @task
@@ -187,16 +184,16 @@ def truststore(truststore_config, target_path):
 
 
 def kafka(kafka_config, target_path):
-    add_to_template_values('KAFKA_BOOTSTRAP_SERVER', from_config(kafka_config['bootstrap_server']))
+    add_to_template_values('KAFKA_BOOTSTRAP_SERVER', kafka_config['bootstrap_server']['value'])
     keystore(kafka_config['keystore'], target_path)
     truststore(kafka_config['truststore'], target_path)
 
 
 @task
 def schema_registry(schema_registry_config):
-    add_to_template_values('SCHEMA_REGISTRY_USERNAME', from_config(schema_registry_config['user_name']))
-    add_to_template_values('SCHEMA_REGISTRY_PASSWORD', from_config(schema_registry_config['password']))
-    add_to_template_values('SCHEMA_REGISTRY_URL', from_config(schema_registry_config['url']))
+    add_to_template_values('SCHEMA_REGISTRY_USERNAME', schema_registry_config['user_name']['value'])
+    add_to_template_values('SCHEMA_REGISTRY_PASSWORD', schema_registry_config['password']['value'])
+    add_to_template_values('SCHEMA_REGISTRY_URL', schema_registry_config['url']['value'])
 
 
 def schema_validation(schema_version, rule_obj, path_):
