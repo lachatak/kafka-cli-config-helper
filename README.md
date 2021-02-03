@@ -1,24 +1,34 @@
 # Kafka CLI config helper
-Running kafka cli command needs several upfront preparations especially if you want to connect to secured kafka cluster. 
+Every time we need to connect to a SSL secured kafka cluster to do some cli operations we need to go trough the same painful process of collecting credentials, creating configuration files and SSL stores. 
 - Need to have a keystore.p12 and/or truststore.jks
 - Need to have a configuration file to feed it into the kafka cli commands
 
-Kafka CLI config helper is a python tool which automates collecting connection properties and credentials from various places and produces [necessary files](templates) to be able to easily run kafka cli commands locally in a docker container.
+The situation is even more complicated if you have several environments and autonomous teams who is using kafka with their own credentials stored at various places. 
+
+Kafka CLI config helper is a `python3` tool which automates collecting connection properties and credentials from various sources and produces [necessary files](templates) to be able to easily run kafka cli commands locally in a docker container.
 
 # How to run
+
+## Install
+You need to have `python3` installed
+```bash
+git clone git@github.com:lachatak/kafka-cli-config-helper.git
+cd kafka-cli-config-helper
+pip3 install -r requirements.txt
+```
+
 ## Configuration
-You need to provide `yaml` configuration for the helper. See [Detailed Configuration Example ](#detailed-configuration-example), [schema](schema.yaml) and [resolvers schema](resolvers_schema.yaml)
+You need to provide a `yaml` configuration for the application. See [Detailed Configuration Example ](#detailed-configuration-example), [schema](schema.yaml) and [resolvers schema](resolvers_schema.yaml)
 
 ## Run
 - log into the google project and k8s cluster you want to resolve values from (if you resolve values from google, k8s)
-- generate
+- generate configuration
 ```bash
-pip3 install -r requirements.txt
 python3 kafka_cli_config_helper.py my-configuartion.yaml
 ```
 It will collect connection properties and credentials based on your configuration and create `.generated/my-configuartion` directory with files needed to be able connect to kafka from you localhost.
 
-- execute. Open `.generated/my-configuartion/README.md`. In the command sections there are several popular kafka actions ready to be used. All you need to do is to copy the command into a terminal window and run. Underlying config file and credentials will be mounted into the docker container.
+- execute. Open `.generated/my-configuartion/README.md`. In the commands section there are several popular kafka actions ready to be used. All you need to do is to copy the command into a terminal window and run. Underlying config file and credentials will be mounted into the docker container.
 ```bash
 docker run -v /tmp/kafka/.generated/my-configuartion:/tmp confluentinc/cp-kafka:latest kafka-topics \
 --bootstrap-server localhost:9092  \
