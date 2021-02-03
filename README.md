@@ -7,7 +7,7 @@ Kafka CLI config helper is a python tool which automates collecting connection p
 
 # How to run
 ## Configuration
-You need to provide `yaml` configuration for your setup. See [Config Template](config.yaml.template), [schema](schema.yaml) and [resolvers schema](resolvers_schema.yaml)
+You need to provide `yaml` configuration for the helper. See [Detailed Configuration Example ](#detailed-configuration-example), [schema](schema.yaml) and [resolvers schema](resolvers_schema.yaml)
 
 ## Run
 - log into the google project and k8s cluster you want to resolve values from (if you resolve values from google, k8s)
@@ -36,6 +36,61 @@ Some command will need minor changes for your use case like update topic or grou
 
 ## Limitations
 One configuration file can only resolve values from the same google project/k8s cluster/google cloud secret manager. This limitation is fine most of the cases.
+
+# Detailed Configuration Example 
+Generate kafka configuration files for:
+- `bootstrap_server` is defined in a k8s configmap
+- generate `keystore` using `client_private_key` and `client_certificate` available in plain text files. Keystore and key password will be generated and stored in the generated `kafka.properties` file
+- use pre-built `truststore` defined in a k8s configmap as binary data. `password` is available in a Google Cloud Secret Manager in plain text
+- schema registry `user_name` is not stored in any external source so it is defined as value
+- schema registry `password` is defined in a k8s secret
+- schema registry `url` is defined in a k8s configmap as plain text
+```yaml
+version: 1.0.0
+kafka:
+  bootstrap_server:
+    kubernetes:
+      configmap:
+        namespace: test-service
+        name: kafka-config
+        key: BOOTSTRAP_SERVER
+  keystore:
+    generate:
+      client_private_key:
+        file:
+          path: /tmp/client_private_key
+      client_certificate:
+        file:
+          path: /tmp/client_certificate
+  truststore:
+    binary:
+      truststore:
+        kubernetes:
+          configmap:
+            namespace: test-service
+            name: kafka-truststore
+            key: truststore.jks
+            binary: true
+      password:
+        google_cloud_secret_manager:
+          secret: projects/XXXXXXXXX/secrets/truststore_password/versions/1
+          base64: false
+schema_registry:
+  user_name:
+    value: test-service
+  password:
+    kubernetes:
+      secret:
+        namespace: test-service
+        name: kafka-schema-registry
+        key: password
+  url:
+    kubernetes:
+      configmap:
+        namespace: test-service
+        name: kafka-schema-registry
+        key: SCHEMA_REGISTRY_URL
+```
 
 # Supported resolvers
 There are several [resolvers](resolvers.py) supported. 
@@ -160,59 +215,4 @@ There are 2 ways how a keystore and truststore can be created by the helper:
             namespace: kafka-service
             name: service-config
             key: keystore_password
-```
-
-# Detailed Example
-Generate configuration where:
-- `bootstrap_server` is defined in a k8s configmap
-- generate `keystore` using `client_private_key` and `client_certificate` available in plain text files. Keystore and key password will be generated and stored in the generated `kafka.properties` file
-- use pre-built `truststore` defined in a k8s configmap as binary data. `password` is available in a Google Cloud Secret Manager in plain text
-- schema registry `user_name` is not stored in any external source so it is defined as value
-- schema registry `password` is defined in a k8s secret
-- schema registry `url` is defined in a k8s configmap as plain text
-```yaml
-version: 1.0.0
-kafka:
-  bootstrap_server:
-    kubernetes:
-      configmap:
-        namespace: test-service
-        name: kafka-config
-        key: BOOTSTRAP_SERVER
-  keystore:
-    generate:
-      client_private_key:
-        file:
-          path: /tmp/client_private_key
-      client_certificate:
-        file:
-          path: /tmp/client_certificate
-  truststore:
-    binary:
-      truststore:
-        kubernetes:
-          configmap:
-            namespace: test-service
-            name: kafka-truststore
-            key: truststore.jks
-            binary: true
-      password:
-        google_cloud_secret_manager:
-          secret: projects/XXXXXXXXX/secrets/truststore_password/versions/1
-          base64: false
-schema_registry:
-  user_name:
-    value: test-service
-  password:
-    kubernetes:
-      secret:
-        namespace: test-service
-        name: kafka-schema-registry
-        key: password
-  url:
-    kubernetes:
-      configmap:
-        namespace: test-service
-        name: kafka-schema-registry
-        key: SCHEMA_REGISTRY_URL
 ```
