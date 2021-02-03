@@ -26,7 +26,15 @@ docker run -v /tmp/kafka/.generated/my-configuartion:/tmp confluentinc/cp-kafka:
 --list
 ```
 
-### Limitations
+## Preconfigured commands in the generated README.md
+Some command will need minor changes for your use case like update topic or group you are interested in. See the generated README.md
+- Viewing topic details
+- Viewing consumer group details
+- Reset offset for consumer group
+- Consume message from topic
+- More to add
+
+## Limitations
 One configuration file can only resolve values from the same google project/k8s cluster/google cloud secret manager. This limitation is fine most of the cases.
 
 # Supported resolvers

@@ -1,6 +1,6 @@
 # Most popular kafka commands
 
-## Viewing topic group details
+## Viewing topic details
 - replace the GROUP you are interested in
 - run
 ```bash
