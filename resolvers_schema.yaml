@@ -1,0 +1,52 @@
+# Value module schema
+schema;value:
+  type: str
+
+# Kubernetes module schema
+schema;kubernetes:
+  type: map
+  matching-rule: any
+  range:
+    min: 1
+    max: 1
+  mapping:
+    regex;(^secret$):
+      include: kubernetes_block
+    regex;(^configmap$):
+      include: kubernetes_block
+
+schema;kubernetes_block:
+  type: map
+  mapping:
+    namespace:
+      type: str
+      required: True
+    name:
+      type: str
+      required: True
+    key:
+      type: str
+      required: True
+    binary:
+      type: bool
+
+# GoogleCloudSecretManager module schema
+schema;google_cloud_secret_manager:
+  type: map
+  mapping:
+    secret:
+      type: str
+      required: True
+    base64:
+      type: bool
+      required: True
+
+# File module schema
+schema;file:
+  type: map
+  mapping:
+    path:
+      type: str
+      required: True
+    binary:
+      type: bool
