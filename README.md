@@ -14,7 +14,7 @@ You need to provide `yaml` configuration for your setup. See [Config Template](c
 - generate
 ```bash
 pip3 install -r requirements.txt
-python3 kafka_run_helper.py my-configuartion.yaml
+python3 kafka_cli_config_helper.py my-configuartion.yaml
 ```
 It will collect connection properties and credentials based on your configuration and create `.generated/my-configuartion` directory with files needed to be able connect to kafka from you localhost.
 
