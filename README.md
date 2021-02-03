@@ -1,9 +1,9 @@
-# Kafka run helper
+# Kafka CLI config helper
 Running kafka cli command needs several upfront preparations especially if you want to connect to secured kafka cluster. 
 - Need to have a keystore.p12 and/or truststore.jks
 - Need to have a configuration file to feed it into the kafka cli commands
 
-Kafka run helper is a python tool which automates collecting connection properties and credentials from various places and produces [necessary files](templates) to be able to easily run kafka cli commands locally in a docker container.
+Kafka CLI config helper is a python tool which automates collecting connection properties and credentials from various places and produces [necessary files](templates) to be able to easily run kafka cli commands locally in a docker container.
 
 # How to run
 ## Configuration
