@@ -7,10 +7,10 @@ Kafka run helper is a python tool which automates collecting connection properti
 
 # How to run
 ## Configuration
-You need to provide `yaml` configuration for your setup. See [Config Template](config.yaml.template) and [schema](schema.yaml)
+You need to provide `yaml` configuration for your setup. See [Config Template](config.yaml.template), [schema](schema.yaml) and [resolvers schema](resolvers_schema.yaml)
 
 ## Run
-- log into the google project and k8s cluster you want to resolve values from (if you resolve values from k8s)
+- log into the google project and k8s cluster you want to resolve values from (if you resolve values from google, k8s)
 - generate
 ```bash
 pip3 install -r requirements.txt

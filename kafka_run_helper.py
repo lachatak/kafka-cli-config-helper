@@ -132,7 +132,7 @@ def add_keystore_password_template_values(password):
 def generate_keystore(keystore_config, target_path):
     password = uuid.uuid4().hex
     add_keystore_password_template_values(password)
-    return subprocess.Popen(['./script/keystore.sh',
+    return subprocess.Popen(['./scripts/keystore.sh',
                              keystore_config['client_private_key'],
                              keystore_config['client_certificate'],
                              password,
@@ -165,7 +165,7 @@ def add_truststore_password_template_values(password):
 def generate_truststore(truststore_config, target_path):
     password = uuid.uuid4().hex
     add_truststore_password_template_values(password)
-    return subprocess.Popen(['./script/truststore.sh',
+    return subprocess.Popen(['./scripts/truststore.sh',
                              truststore_config['ca_certificate'],
                              password,
                              target_path],

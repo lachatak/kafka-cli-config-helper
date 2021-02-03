@@ -1,3 +1,4 @@
+# See https://pykwalify.readthedocs.io/en/unstable/index.html for details
 extensions:
   - kafka_run_helper.py
 name: Kafka run helper schema
