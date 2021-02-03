@@ -9,13 +9,6 @@ mapping:
     func: schema_validation
     pattern: ^([0-9]+)\.([0-9]+)\.([0-9]+)$
     required: True
-  environment:
-    type: str
-    pattern: ^([a-z]+)$
-    required: True
-  service:
-    type: str
-    required: True
   kafka:
     type: map
     required: True

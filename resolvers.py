@@ -15,15 +15,18 @@ logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
 
-class Module(ABC):
+class Resolver(ABC):
 
     @property
     @abstractmethod
     def key(self):
         pass
 
+    def provider(self):
+        pass
+
     @abstractmethod
-    def fetch(self, config, **kwargs):
+    def fetch(self, config, provider):
         pass
 
     def resolve(self, app_config):
@@ -32,45 +35,48 @@ class Module(ABC):
         count = len(results)
         if count > 0:
             logging.info(f'Needs to resolve {count} values by file module')
+            provider = self.provider()
             resolved = {}
-            [merge(resolved, unflatten({f'{match.full_path}': self.fetch(match.value[self.key])}),
+            [merge(resolved, unflatten({f'{match.full_path}': self.fetch(match.value[self.key], provider)}),
                    strategy=Strategy.ADDITIVE)for match in results]
             return merge(nested_delete(app_config, self.key), resolved, strategy=Strategy.ADDITIVE)
         else:
             return app_config
 
 
-class Value(Module):
+class Value(Resolver):
 
     @property
     def key(self):
         return 'value'
 
-    def fetch(self, config, **kwargs):
+    def fetch(self, config, provider):
         return config
 
 
-class File(Module):
+class File(Resolver):
 
     @property
     def key(self):
         return 'file'
 
-    def fetch(self, config, **kwargs):
+    def fetch(self, config, provider):
         mode = 'b' if 'binary' in config and config['binary'] else ''
         with open(config['path'], f'r{mode}') as file:
             return file.read()
 
 
-class Kubernetes(Module):
+class Kubernetes(Resolver):
 
     @property
     def key(self):
         return 'kubernetes'
 
-    def fetch(self, config):
+    def provider(self):
         k8s_config.load_kube_config()
-        v1_api = k8s_client.CoreV1Api()
+        return k8s_client.CoreV1Api()
+
+    def fetch(self, config, v1_api):
         if 'secret' in config:
             return self.from_k8s_secret(config['secret'], v1_api)
         elif 'configmap' in config:
@@ -99,14 +105,16 @@ class Kubernetes(Module):
             return configs.data[config['key']]
 
 
-class GoogleCloudSecretManager(Module):
+class GoogleCloudSecretManager(Resolver):
 
     @property
     def key(self):
         return 'google_cloud_secret_manager'
 
-    def fetch(self, config):
-        client = secretmanager.SecretManagerServiceClient()
+    def provider(self):
+        return secretmanager.SecretManagerServiceClient()
+
+    def fetch(self, config, client):
         data = client.access_secret_version(request={"name": config['secret']}).payload.data
         if 'base64' in config and config['base64']:
             return base64.b64decode(data).decode("utf-8")

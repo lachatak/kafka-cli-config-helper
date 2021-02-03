@@ -9,7 +9,7 @@ from jinja2 import Template
 from progress.bar import Bar
 from pykwalify.core import Core
 
-from module import File, GoogleCloudSecretManager, Kubernetes, Value
+from resolvers import File, GoogleCloudSecretManager, Kubernetes, Value
 
 
 logging.basicConfig(level=logging.WARNING)
@@ -29,7 +29,7 @@ def main():
         logger.info("Processing %s", config_name)
         app_config = load_config(config_name)
         resolved = resolve_module_values(app_config)
-        generate_output(resolved)
+        generate_output(config_name, resolved)
     bar.finish()
 
 
@@ -41,8 +41,8 @@ def resolve_module_values(app_config):
     return tmp
 
 
-def generate_output(resolved):
-    target_path = make_target_directory(f"{resolved['service']}-{resolved['environment']}")
+def generate_output(config_name, resolved):
+    target_path = make_target_directory(config_name)
     kafka(resolved['kafka'], target_path)
     schema_registry(resolved['schema_registry'])
     write_templates(target_path)
@@ -76,7 +76,7 @@ def load_config(config_name):
     with open(config_name) as config_file:
         c = Core(data_file_obj=config_file, schema_files=[
             "schema.yaml",
-            "module_schema.yaml"])
+            "resolvers_schema.yaml"])
         app_config = c.validate(raise_exception=True)
         return app_config
 
@@ -104,7 +104,7 @@ def target_directory(target_path):
 
 @task
 def make_target_directory(target_path):
-    target = target_directory(target_path)
+    target = target_directory(path.basename(path.splitext(target_path)[0]))
     if not path.exists(target):
         target.mkdir(parents=True, exist_ok=True)
         logger.info("Target directory %s has been created", target)
