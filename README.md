@@ -53,7 +53,6 @@ There are several [resolvers](resolvers.py) supported.
 - Kubernetes - can resolve value from k8s secret and config map (plain text, binary)
 - File - can resolve value from file (plain text, binary)
 - GoogleCloudSecretManager - can resolve value from Google Cloud Secret Manager (plain text or base64 encoded)
-- GoogleKMS - In progress
 
 ## Value
 The simples configuration resolver to provide value directly in the yaml file
@@ -133,6 +132,10 @@ Fetch base64 encoded text value from secret manager
       secret: projects/XXXXXXXXX/secrets/client_private_key/versions/1
       base64: true
 ```
+## Future Resolver Improvements
+- GoogleKMS - In progress
+- AWSSecretManager - TBD
+- ???
 
 # Keystore and truststore generation
 There are 2 ways how a keystore and truststore can be created by the helper:
