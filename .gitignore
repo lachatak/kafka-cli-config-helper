@@ -2,4 +2,5 @@
 .idea
 venv
 *.yaml
-!module/*.yaml
+!schema.yaml
+!resolvers_schema.yaml
