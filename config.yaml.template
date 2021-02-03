@@ -1,6 +1,4 @@
 version: 1.0.0
-environment: prd
-service: test-service
 kafka:
   bootstrap_server:
     value: localhost:9092
