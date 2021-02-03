@@ -16,7 +16,7 @@ python3 kafka_run_helper.py my-configuartion.yaml
 ```
 It will collect connection properties and credentials based on your configuration and create `.generated/my-configuartion` directory with files needed to be able connect to kafka from you localhost.
 
-- execute. copy relevant command into your terminal from `.generated/my-configuartion/README.md` 
+- execute. Open `.generated/my-configuartion/README.md`. In the command sections there are several popular kafka actions ready to be used. All you need to do is to copy the command into a terminal window and run. Underlying config file and credentials will be mounted into the docker container.
 ```bash
 docker run -v /tmp/kafka/.generated/my-configuartion:/tmp confluentinc/cp-kafka:latest kafka-topics \
 --bootstrap-server localhost:9092  \
@@ -26,9 +26,6 @@ docker run -v /tmp/kafka/.generated/my-configuartion:/tmp confluentinc/cp-kafka:
 
 ### Limitations
 One configuration file can only resolve values from the same google project/k8s cluster/google cloud secret manager. This limitation is fine most of the cases.
-
-## Execute command
-Go into the generated directory and see README.md. In the command sections there are several popular kafka actions ready to be used. All you need to do is to copy the command into a terminal window and run. Underlying config file and credentials will be mounted into the docker container.
 
 # Supported resolvers
 There are several [resolvers](resolvers.py) supported. 
