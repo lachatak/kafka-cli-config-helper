@@ -139,7 +139,7 @@ Fetch base64 encoded text value from secret manager
 
 # Keystore and truststore generation
 There are 2 ways how a keystore and truststore can be created by the helper:
-- Generate keystore and/or truststore based on provided certificates configured via resolvers. Passwords for the new keystore/truststore will be generated and stored in the `./generated/my-config/kafka.properties` file.
+- Generate keystore and/or truststore based on provided certificates configured via resolvers. Passwords for the new keystore/truststore will be generated and stored in the `./generated/my-configuartion/kafka.properties` file.
 ```yaml
   keystore:
     generate:
@@ -156,7 +156,7 @@ There are 2 ways how a keystore and truststore can be created by the helper:
             name: kafka-certificates
             key: client-certificate
 ```
-- Keystore and/or truststore is already generated, we just need to fetch it from some source by configuring a resolvers
+- Keystore and/or truststore is already generated, we just need to fetch it from some external source by configuring a resolvers
 ```yaml
   keystore:
     binary:
