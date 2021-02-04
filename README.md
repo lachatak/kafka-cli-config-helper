@@ -5,7 +5,7 @@ Every time we need to connect to a SSL secured kafka cluster to do some cli oper
 
 The situation is even more complicated if you have several environments and autonomous teams who is using kafka with their own credentials stored at various places. 
 
-Kafka CLI config helper is a `python3` tool which automates collecting connection properties and credentials from various sources and produces [necessary files](templates) to be able to easily run kafka cli commands locally in a docker container.
+Kafka CLI config helper is a `python3` tool which automates collecting connection properties and credentials from various sources and produces a [config file](templates/kafka.properties.template), [README.md](templates/README.md.template) and keytstore/truststore to be able to easily run kafka cli commands locally in a docker container.
 
 # How to run
 
