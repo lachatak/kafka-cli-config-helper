@@ -8,7 +8,7 @@ from pathlib import Path
 from jinja2 import Template
 from progress.bar import Bar
 from pykwalify.core import Core
-
+import click
 from resolvers import File, GoogleCloudSecretManager, Kubernetes, Value
 
 
@@ -23,9 +23,11 @@ files_to_parse = sys.argv[1:]
 number_of_tasks = (len(files_to_parse) * 7)
 bar = Bar('', max=number_of_tasks)
 
-
-def main():
-    for config_name in files_to_parse:
+@click.command()
+@click.argument('config_files', type=click.File('r'), required=True, nargs=1)
+def main(config_files):
+    """Reads provide config and produces helper files to be able to easily run kafka cli commans"""
+    for config_name in config_files:
         logger.info("Processing %s", config_name)
         app_config = load_config(config_name)
         resolved = resolve_module_values(app_config)
@@ -72,13 +74,13 @@ def log_shell_out(proc):
 
 
 @task
-def load_config(config_name):
-    with open(config_name) as config_file:
-        c = Core(data_file_obj=config_file, schema_files=[
-            "schema.yaml",
-            "resolvers_schema.yaml"])
-        app_config = c.validate(raise_exception=True)
-        return app_config
+def load_config(config_file):
+    # with open(config_name) as config_file:
+    c = Core(data_file_obj=config_file, schema_files=[
+        "schema.yaml",
+        "resolvers_schema.yaml"])
+    app_config = c.validate(raise_exception=True)
+    return app_config
 
 
 def write_templates(target_path):
