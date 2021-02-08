@@ -5,6 +5,7 @@ import uuid
 from os import path
 from pathlib import Path
 
+import click
 from jinja2 import Template
 from progress.bar import Bar
 from pykwalify.core import Core
@@ -23,9 +24,11 @@ files_to_parse = sys.argv[1:]
 number_of_tasks = (len(files_to_parse) * 7)
 bar = Bar('', max=number_of_tasks)
 
-
-def main():
-    for config_name in files_to_parse:
+@click.command()
+@click.argument('config_files', type=click.Path(exists=True), required=True, nargs=-1)
+def main(config_files):
+    """Parses provided config, resolves values and produces helper files to be able to easily run kafka cli commands"""
+    for config_name in config_files:
         logger.info("Processing %s", config_name)
         app_config = load_config(config_name)
         resolved = resolve_module_values(app_config)
