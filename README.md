@@ -1,11 +1,11 @@
 # Kafka CLI config helper
-Every time we need to connect to a SSL secured kafka cluster to do some cli operations we need to go through the same painful process of collecting credentials, creating configuration files and SSL stores. 
-- Need to have a keystore.p12 and/or truststore.jks
-- Need to have a configuration file to feed it into the kafka cli commands
+Every time we need to connect to an SSL secured kafka cluster to do some CLI operations we need to go through the same painful process of collecting credentials as well as creating configuration files and SSL stores. 
+- E.g. keystore.p12 and/or truststore.jks
+- Configuration file for the kafka CLI commands
 
-The situation is even more complicated if you have several environments and autonomous teams who is using kafka with their own credentials stored at various places. 
+The situation is made even more complicated if you have several environments and autonomous teams who are using kafka with their own credentials stored in distinct secret management solutions. 
 
-Kafka CLI config helper is a `python3` tool which based on the provided [configuration](#detailed-configuration-example) automates collecting connection properties and credentials from various sources and produces a [config file](templates/kafka.properties.template), [README.md](templates/README.md.template) and keytstore/truststore to be able to easily run kafka cli commands locally in a docker container.
+Kafka CLI config helper is a `python3` tool which through the use of a [configuration](#detailed-configuration-example) file automates the process of collecting connection properties and credentials from various sources and produces a [config file](templates/kafka.properties.template), [README.md](templates/README.md.template) and keystore/truststore that can be used to easily run kafka cli commands locally in a docker container.
 
 # How to run
 
@@ -18,17 +18,17 @@ pip3 install -r requirements.txt
 ```
 
 ## Configuration
-You need to provide a `yaml` configuration for the application. See [Detailed Configuration Example ](#detailed-configuration-example), [schema](schema.yaml) and [resolvers schema](resolvers_schema.yaml)
+You need to provide a `yaml` configuration file for the application. See [Detailed Configuration Example ](#detailed-configuration-example), [schema](schema.yaml) and [resolvers schema](resolvers_schema.yaml) for example configurations.
 
 ## Run
-- log into the google project and k8s cluster you want to resolve values from (if you resolve values from google, k8s)
-- generate configuration
+- Log into the GCP project and k8s cluster you want to resolve values from (if you're resolving values from GCP and k8s)
+- Generate configuration
 ```bash
-python3 kafka_cli_config_helper.py my-configuartion.yaml
+python3 kafka_cli_config_helper.py my-configuration.yaml
 ```
-It will collect connection properties and credentials based on your configuration and create `.generated/my-configuartion` directory with files needed to be able connect to kafka from you localhost.
+The tool will collect connection properties and credentials based on the provided configuration file and create a `.generated/my-configuration` directory with the files needed to be able connect to kafka from your machine.
 
-- execute. Open `.generated/my-configuartion/README.md`. In the commands section there are several popular kafka actions ready to be used. All you need to do is to copy the command into a terminal window and run. Underlying config file and credentials will be mounted into the docker container.
+- Open `.generated/my-configuration/README.md`. Under the commands section there are several popular kafka actions ready to be used. All you need to do is to copy the command into a terminal window and run. Underlying config files and credentials will be mounted into the docker container.
 ```bash
 docker run -v /tmp/kafka/.generated/my-configuartion:/tmp confluentinc/cp-kafka:latest kafka-topics \
 --bootstrap-server localhost:9092  \
@@ -37,35 +37,33 @@ docker run -v /tmp/kafka/.generated/my-configuartion:/tmp confluentinc/cp-kafka:
 ```
 
 ## Preconfigured commands in the generated README.md
-Some command will need minor changes for your use case like update topic or group you are interested in. See the generated README.md
+Some commands will need minor changes for your use case - for example changing the topic or group to the one that you are interested in. See the generated README.md
 - Viewing topic details
 - Viewing consumer group details
 - Reset offset for consumer group
 - Consume message from topic
-- More to add
+- More to come
 
 ## Limitations
-One configuration file can only resolve values from the same google project/k8s cluster/google cloud secret manager. This limitation is fine most of the cases.
+Any single given configuration file is only capable of resolving values from a single GCP project/k8s cluster/google cloud secret manager.
 
 # Supported resolvers
 There are several [resolvers](resolvers.py) supported. 
-- Value - can provide values directly in the config 
-- Kubernetes - can resolve value from k8s secret and config map (plain text, binary)
-- File - can resolve value from file (plain text, binary)
-- GoogleCloudSecretManager - can resolve value from Google Cloud Secret Manager (plain text or base64 encoded)
+- Value - Resolves values provided directly in the configuration file 
+- Kubernetes - Resolves values from k8s secrets and config maps (plain text, binary)
+- File - Resolves values from a file on the local filesystem (plain text, binary)
+- GoogleCloudSecretManager - Resolves values from Google Cloud Secret Manager (plain text or base64 encoded)
 
-## Value
-The simples configuration resolver to provide value directly in the yaml file
+## Resolver configuration examples
+### Value
 ```yaml
   bootstrap_server:
     value: localhost:9092
 ```
 
-## Kubernetes
-Use Kubernetes resolver to fetch value from k8s configmap or secret
-
-### Config Map
-Fetch plain text value from k8s configmap
+### Kubernetes
+#### Config Map
+##### Plaintext
 ```yaml
   user_name:
     kubernetes:
@@ -75,7 +73,8 @@ Fetch plain text value from k8s configmap
         key: kafka_schema_registry_username
 ```
 
-Fetch binary value from k8s configmap
+
+##### Binary
 ```yaml
   truststore:
     kubernetes:
@@ -86,8 +85,7 @@ Fetch binary value from k8s configmap
         binary: true
 ```
 
-### Secret
-Fetch secret value from k8s secret
+#### Secret
 ```yaml
   password:
     kubernetes:
@@ -97,17 +95,15 @@ Fetch secret value from k8s secret
         key: kafka_schema_registry_password
 ```
 
-## File
-Use File resolver to fetch value directly from file
-
-Fetch plain text value from file
+### File
+#### Plaintext
 ```yaml
   client_private_key:
     file:
       path: /tmp/client_private_key
 ```
 
-Fetch binary value from file
+#### Binary
 ```yaml
   keystore:
     file:
@@ -115,17 +111,14 @@ Fetch binary value from file
       binary: true
 ```
 
-## GoogleCloudSecretManager
-Use GoogleCloudSecretManager resolver to fetch secret value from file [Google Cloud Secret Manager](https://cloud.google.com/secret-manager/docs)
-
-Fetch plain text value from secret manager
+### GoogleCloudSecretManager
+#### Plaintext
 ```yaml
   client_private_key:
     google_cloud_secret_manager:
       secret: projects/XXXXXXXXX/secrets/client_private_key/versions/1
 ```
-
-Fetch base64 encoded text value from secret manager
+#### Base64 encoded
 ```yaml
   client_private_key:
     google_cloud_secret_manager:
@@ -138,8 +131,8 @@ Fetch base64 encoded text value from secret manager
 - ???
 
 # Keystore and truststore generation
-There are 2 ways how a keystore and truststore can be created by the helper:
-- Generate keystore and/or truststore based on provided certificates configured via resolvers. Passwords for the new keystore/truststore will be generated and stored in the `./generated/my-configuartion/kafka.properties` file.
+There are 2 ways the tool can be used to create a keystore and truststore:
+- Generate keystore and/or truststore based on provided certificates configured via resolvers. Passwords for the new keystore/truststore will be generated and stored in the `./generated/my-configuration/kafka.properties` file.
 ```yaml
   keystore:
     generate:
@@ -156,7 +149,7 @@ There are 2 ways how a keystore and truststore can be created by the helper:
             name: kafka-certificates
             key: client-certificate
 ```
-- Keystore and/or truststore is already generated, we just need to fetch it from some external source by configuring a resolvers
+- Keystore and/or truststore is already generated, so we just need to fetch it from some external source by configuring a resolver
 ```yaml
   keystore:
     binary:
@@ -177,9 +170,9 @@ There are 2 ways how a keystore and truststore can be created by the helper:
 
 # Detailed Configuration Example 
 Generate kafka configuration files for:
-- `bootstrap_server` is defined in a k8s configmap
-- generate `keystore` using `client_private_key` and `client_certificate` available in plain text files. Keystore and key password will be generated and stored in the generated `kafka.properties` file
-- use pre-built `truststore` defined in a k8s configmap as binary data. `password` is available in a Google Cloud Secret Manager in plain text
+- `bootstrap_server` defined in a k8s configmap
+- Generate `keystore` using `client_private_key` and `client_certificate` available in plain text files locally. Keystore and password will be generated and stored in the generated `kafka.properties` file
+- Use a pre-built `truststore` defined in a k8s configmap as binary data. `password` is available in a Google Cloud Secret Manager in plain text
 - schema registry `user_name` is not stored in any external source so it is defined as value
 - schema registry `password` is defined in a k8s secret
 - schema registry `url` is defined in a k8s configmap as plain text
