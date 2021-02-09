@@ -1,7 +1,7 @@
 # Kafka CLI config helper
 ![Graph](http://kafka-acl-graph.com:5000/api/v1/kafka-acl-graph.svg?include-pattern=boost-balance-service&exclude-topic-pattern=boost_transaction_generated_v1)
 
-![stack Overflow](http://lmsotfy.com/so.png)
+![stack Overflow](file:///tmp/fa28ad65cb8f4a1bb9331da23d1c5603.svg)
 
 Every time we need to connect to an SSL secured kafka cluster to do some CLI operations we need to go through the same painful process of collecting credentials as well as creating configuration files and SSL stores. 
 - E.g. keystore.p12 and/or truststore.jks
