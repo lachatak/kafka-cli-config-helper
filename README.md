@@ -1,4 +1,6 @@
 # Kafka CLI config helper
+[Graph](http://127.0.0.1:5000/api/v1/kafka-acl-graph?include-pattern=boost-balance-service&exclude-topic-pattern=boost_transaction_generated_v1)
+
 Every time we need to connect to an SSL secured kafka cluster to do some CLI operations we need to go through the same painful process of collecting credentials as well as creating configuration files and SSL stores. 
 - E.g. keystore.p12 and/or truststore.jks
 - Configuration file for the kafka CLI commands
