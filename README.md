@@ -1,6 +1,4 @@
 # Kafka CLI config helper
-[Clients](https://lachatak.github.io/kafka-cli-config-helper)
-
 Every time we need to connect to an SSL secured kafka cluster to do some CLI operations we need to go through the same painful process of collecting credentials as well as creating configuration files and SSL stores. 
 - E.g. keystore.p12 and/or truststore.jks
 - Configuration file for the kafka CLI commands
