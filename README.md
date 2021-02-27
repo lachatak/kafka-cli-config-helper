@@ -73,6 +73,15 @@ There are several [resolvers](resolvers.py) supported.
         key: kafka_schema_registry_username
 ```
 
+##### Property from file stored in configmap
+```yaml
+  user_name:
+    kubernetes:
+      configmap:
+        namespace: kafka-service
+        name: kafka-config
+        key: connection.properties:kafka_schema_registry_username
+```
 
 ##### Binary
 ```yaml
@@ -86,6 +95,7 @@ There are several [resolvers](resolvers.py) supported.
 ```
 
 #### Secret
+##### Plaintext
 ```yaml
   password:
     kubernetes:
@@ -95,12 +105,29 @@ There are several [resolvers](resolvers.py) supported.
         key: kafka_schema_registry_password
 ```
 
+##### Property from file stored in secret
+```yaml
+  password:
+    kubernetes:
+      secret:
+        namespace: kafka-service
+        name: kafka-config
+        key: connection.properties:kafka_schema_registry_password
+```
+
 ### File
 #### Plaintext
 ```yaml
   client_private_key:
     file:
       path: /tmp/client_private_key
+```
+
+##### Property from property file
+```yaml
+  password:
+    file:
+      path: connection.properties:kafka_schema_registry_password
 ```
 
 #### Binary

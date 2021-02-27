@@ -5,3 +5,4 @@ venv
 *.yaml
 !schema.yaml
 !resolvers_schema.yaml
+common.properties

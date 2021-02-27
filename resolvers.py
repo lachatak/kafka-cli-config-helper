@@ -10,7 +10,6 @@ from unflatten import unflatten
 
 from google.cloud import secretmanager
 
-
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
@@ -38,7 +37,7 @@ class Resolver(ABC):
             provider = self.provider()
             resolved = {}
             [merge(resolved, unflatten({f'{match.full_path}': self.fetch(match.value[self.key], provider)}),
-                   strategy=Strategy.ADDITIVE)for match in results]
+                   strategy=Strategy.ADDITIVE) for match in results]
             return merge(nested_delete(app_config, self.key), resolved, strategy=Strategy.ADDITIVE)
         else:
             return app_config
@@ -62,8 +61,15 @@ class File(Resolver):
 
     def fetch(self, config, provider):
         mode = 'b' if 'binary' in config and config['binary'] else ''
-        with open(config['path'], f'r{mode}') as file:
-            return file.read()
+        key_parts = config['path'].split(':', 1)
+        with open(key_parts[0], f'r{mode}') as file:
+            content = file.read()
+            if len(key_parts) == 2 and not mode == 'b':
+                properties = property_str_to_dict(content)
+                return properties[key_parts[1]]
+            else:
+                return content
+
 
 
 class Kubernetes(Resolver):
@@ -77,6 +83,7 @@ class Kubernetes(Resolver):
         return k8s_client.CoreV1Api()
 
     def fetch(self, config, v1_api):
+
         if 'secret' in config:
             return self.from_k8s_secret(config['secret'], v1_api)
         elif 'configmap' in config:
@@ -94,15 +101,26 @@ class Kubernetes(Resolver):
 
     def from_k8s_secret(self, config, v1_api):
         secrets = v1_api.read_namespaced_secret(config['name'], config['namespace']).data
-        secret = base64.b64decode(secrets[config['key']])
-        return secret.decode("utf-8")
+        key_parts = config['key'].split(':', 1)
+        secret = base64.b64decode(secrets[key_parts[0]])
+        if len(key_parts) == 2:
+            properties = property_str_to_dict(secret.decode("utf-8"))
+            return properties[key_parts[1]]
+        else:
+            return secret.decode("utf-8")
 
     def from_k8s_configmap(self, config, v1_api):
         configs = v1_api.read_namespaced_config_map(config['name'], config['namespace'])
         if 'binary' in config and config["binary"]:
             return base64.b64decode(configs.binary_data[config['key']])
         else:
-            return configs.data[config['key']]
+            key_parts = config['key'].split(':', 1)
+            config = configs.data[key_parts[0]]
+            if len(key_parts) == 2:
+                properties = property_str_to_dict(config)
+                return properties[key_parts[1]]
+            else:
+                return config
 
 
 class GoogleCloudSecretManager(Resolver):
@@ -120,3 +138,7 @@ class GoogleCloudSecretManager(Resolver):
             return base64.b64decode(data).decode("utf-8")
         else:
             return data
+
+
+def property_str_to_dict(property_str):
+    return dict(line.strip().split('=', 1) for line in property_str.splitlines() if not line.startswith("#") and line)

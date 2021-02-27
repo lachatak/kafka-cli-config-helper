@@ -1,3 +1,8 @@
+# Key with property. Useful for resolving secrets from property file stored in secret, configmap or file
+schema;key_with_property:
+    type: str
+    pattern: .*(:.*)?
+
 # Value module schema
 schema;value:
   type: str
@@ -25,7 +30,7 @@ schema;kubernetes_block:
       type: str
       required: True
     key:
-      type: str
+      include: key_with_property
       required: True
     binary:
       type: bool
@@ -46,7 +51,7 @@ schema;file:
   type: map
   mapping:
     path:
-      type: str
+      include: key_with_property
       required: True
     binary:
       type: bool
