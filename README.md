@@ -28,6 +28,8 @@ python3 kafka_cli_config_helper.py my-configuration.yaml
 ```
 The tool will collect connection properties and credentials based on the provided configuration file and create a `.generated/my-configuration` directory with the files needed to be able connect to kafka from your machine.
 
+If the argument is pointing to directory then it will try to gather all `.yaml` files in the directory and generate configuration for all of them.
+
 - Open `.generated/my-configuration/README.md`. Under the commands section there are several popular kafka actions ready to be used. All you need to do is to copy the command into a terminal window and run. Underlying config files and credentials will be mounted into the docker container.
 ```bash
 docker run -v /tmp/kafka/.generated/my-configuartion:/tmp confluentinc/cp-kafka:latest kafka-topics \

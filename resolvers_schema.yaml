@@ -1,5 +1,5 @@
-# Key with property. Useful for resolving secrets from property file stored in secret, configmap or file
-schema;key_with_property:
+# Useful for resolving value from property file stored in secret, configmap or file
+schema;multipart_key:
     type: str
     pattern: .*(:.*)?
 
@@ -30,7 +30,7 @@ schema;kubernetes_block:
       type: str
       required: True
     key:
-      include: key_with_property
+      include: multipart_key
       required: True
     binary:
       type: bool
@@ -51,7 +51,7 @@ schema;file:
   type: map
   mapping:
     path:
-      include: key_with_property
+      include: multipart_key
       required: True
     binary:
       type: bool

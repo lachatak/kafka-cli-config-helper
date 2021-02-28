@@ -7,7 +7,7 @@ type: map
 mapping:
   version:
     type: str
-    func: schema_validation
+    func: schema_version_validation
     pattern: ^([0-9]+)\.([0-9]+)\.([0-9]+)$
     required: True
   kafka:

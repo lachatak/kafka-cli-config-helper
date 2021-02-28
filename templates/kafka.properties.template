@@ -7,3 +7,4 @@ ssl.key.password={{ KEY_PASSWORD }}
 ssl.truststore.location=/tmp/trustStore.jks
 ssl.truststore.type=JKS
 ssl.truststore.password={{ TRUSTSTORE_PASSWORD }}
+#auto.offset.reset = earliest

@@ -1,8 +1,7 @@
 import logging
 import subprocess
-import sys
 import uuid
-from os import path
+from os import listdir, path
 from pathlib import Path
 
 import click
@@ -20,20 +19,37 @@ SchemaVersionSupport = '1.0.0'
 
 TemplateValues = {}
 Resolved = {}
-files_to_parse = sys.argv[1:]
-number_of_tasks = (len(files_to_parse) * 7)
-bar = Bar('', max=number_of_tasks)
+bar: Bar = None
+
 
 @click.command()
 @click.argument('config_files', type=click.Path(exists=True), required=True, nargs=-1)
 def main(config_files):
     """Parses provided config, resolves values and produces helper files to be able to easily run kafka cli commands"""
+    config_files = files_to_process(config_files)
+    setup_progress_bar(len(config_files))
     for config_name in config_files:
         logger.info("Processing %s", config_name)
         app_config = load_config(config_name)
         resolved = resolve_module_values(app_config)
         generate_output(config_name, resolved)
     bar.finish()
+
+
+def setup_progress_bar(number_of_files: int):
+    global bar
+    bar = Bar('', max=number_of_files * 7)
+
+
+def files_to_process(config_files):
+    if len(config_files) == 1 and path.isdir(config_files[0]):
+        config_path = config_files[0]
+        return [path.join(config_path, file) for file in listdir(config_path) if file.endswith(".yaml")]
+    else:
+        for config_file in config_files:
+            if not path.isfile(config_file):
+                raise ValueError("If more arguments are provided then all of them must be a config file!")
+        return config_files
 
 
 def resolve_module_values(app_config):
@@ -205,7 +221,7 @@ def schema_registry(schema_registry_config):
     add_to_template_values('SCHEMA_REGISTRY_URL', schema_registry_config['url'])
 
 
-def schema_validation(schema_version, rule_obj, path_):
+def schema_version_validation(schema_version, rule_obj, path_):
     major, minor, bugfix = SchemaVersionSupport.split('.')
     conf_major, conf_minor, conf_bugfix = schema_version.split('.')
     if major == conf_major and minor >= conf_minor:
